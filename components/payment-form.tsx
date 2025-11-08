@@ -37,6 +37,7 @@ export function PaymentForm() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
+  const [transactionId, setTransactionId] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -46,7 +47,7 @@ export function PaymentForm() {
     setSuccess(false)
     setWarning(null)
 
-    // Real-time amount validation and high-value warning
+    
     if (field === "amount" && value) {
       const amountNum = Number.parseFloat(value)
       if (amountNum >= 50000) {
@@ -58,30 +59,34 @@ export function PaymentForm() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    // Validate recipient name
+   
     const nameValidation = Validator.validateName(formData.recipientName)
     if (!nameValidation.isValid) {
       newErrors.recipientName = nameValidation.error || "Invalid name"
     }
 
-    // Validate account number
-    const accountValidation = Validator.validateAccountNumber(formData.accountNumber)
+    
+    const cleanedAcc = formData.accountNumber.replace(/\s/g, "").toUpperCase()
+    const isIban = /^[A-Z]{2}\d{2}/.test(cleanedAcc)
+    const accountValidation = isIban
+      ? Validator.validateIBAN(cleanedAcc)
+      : Validator.validateAccountNumber(cleanedAcc)
     if (!accountValidation.isValid) {
       newErrors.accountNumber = accountValidation.error || "Invalid account number"
     }
 
-    // Validate amount
+  
     const amountValidation = Validator.validateAmount(formData.amount)
     if (!amountValidation.isValid) {
       newErrors.amount = amountValidation.error || "Invalid amount"
     }
 
-    // Validate bank name
+  
     if (!formData.bankName || formData.bankName.trim().length < 2) {
       newErrors.bankName = "Bank name is required"
     }
 
-    // Validate reference (optional but check if provided)
+    
     if (formData.reference && formData.reference.length > 500) {
       newErrors.reference = "Reference must be less than 500 characters"
     }
@@ -93,6 +98,7 @@ export function PaymentForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSuccess(false)
+    setTransactionId(null)
     setWarning(null)
 
     if (!validateForm()) {
@@ -101,14 +107,14 @@ export function PaymentForm() {
 
     setIsSubmitting(true)
 
-    // Check rate limiting
+  
     if (!SecurityManager.checkRateLimit("payment", 3, 60000)) {
       setErrors({ submit: "Too many payment attempts. Please wait a moment." })
       setIsSubmitting(false)
       return
     }
 
-    // Get CSRF token
+    
     const csrfToken = SecurityManager.getCSRFToken()
     if (!csrfToken) {
       setErrors({ submit: "Security token missing. Please refresh and try again." })
@@ -117,7 +123,7 @@ export function PaymentForm() {
     }
 
     try {
-      // Call API endpoint
+      
       const response = await fetch("/api/payment", {
         method: "POST",
         headers: {
@@ -131,8 +137,11 @@ export function PaymentForm() {
 
       if (response.ok) {
         setSuccess(true)
+        if (result?.transactionId) {
+          setTransactionId(result.transactionId)
+        }
 
-        // Log security event
+       
         SecurityManager.logSecurityEvent({
           type: "transaction",
           userId: "current-user",
@@ -140,9 +149,10 @@ export function PaymentForm() {
           ipAddress: "client-ip",
           details: `Payment of ${formData.amount} ${formData.currency} to ${formData.recipientName}`,
           severity: Number.parseFloat(formData.amount) >= 50000 ? "high" : "low",
+          timestamp: new Date().toISOString(),
         })
 
-        // Reset form
+        
         setFormData({
           recipientName: "",
           accountNumber: "",
@@ -185,7 +195,7 @@ export function PaymentForm() {
             <Alert className="border-teal-200 bg-teal-50">
               <CheckCircle2 className="h-4 w-4 text-teal-600" />
               <AlertDescription className="text-teal-800">
-                Payment submitted successfully! Transaction ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}
+                Payment submitted successfully! Transaction ID: {transactionId}
               </AlertDescription>
             </Alert>
           )}

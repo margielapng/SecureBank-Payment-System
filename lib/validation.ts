@@ -4,7 +4,8 @@
 export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
 
 // Password validation - Strong security requirements
-export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$/
+export const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$/
 
 // IBAN validation - International Bank Account Number
 export const IBAN_REGEX = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/
@@ -23,6 +24,9 @@ export const CURRENCY_REGEX = /^[A-Z]{3}$/
 
 // 2FA code validation - 6 digits
 export const TWO_FA_CODE_REGEX = /^[0-9]{6}$/
+
+// Identifier validation - Alphanumeric, dash, underscore (1-64 chars)
+export const ID_REGEX = /^[A-Za-z0-9_-]{1,64}$/
 
 // SQL injection detection
 export const SQL_INJECTION_REGEX =
@@ -68,9 +72,12 @@ export class Validator {
     // IBAN checksum validation
     const rearranged = cleaned.slice(4) + cleaned.slice(0, 4)
     const numericIBAN = rearranged.replace(/[A-Z]/g, (char) => (char.charCodeAt(0) - 55).toString())
-    const remainder = BigInt(numericIBAN) % 97n
+    let remainder = 0
+    for (let i = 0; i < numericIBAN.length; i++) {
+      remainder = (remainder * 10 + Number(numericIBAN[i])) % 97
+    }
 
-    if (remainder !== 1n) return { isValid: false, error: "Invalid IBAN checksum" }
+    if (remainder !== 1) return { isValid: false, error: "Invalid IBAN checksum" }
     return { isValid: true }
   }
 
@@ -79,7 +86,7 @@ export class Validator {
     if (!accountNumber) return { isValid: false, error: "Account number is required" }
     const cleaned = accountNumber.replace(/\s/g, "").toUpperCase()
     if (!ACCOUNT_NUMBER_REGEX.test(cleaned)) {
-      return { isValid: false, error: "Account number must be 8-17 alphanumeric characters" }
+      return { isValid: false, error: "Invalid account number format" }
     }
     return { isValid: true }
   }
@@ -123,6 +130,15 @@ export class Validator {
     if (!code) return { isValid: false, error: "2FA code is required" }
     if (!TWO_FA_CODE_REGEX.test(code)) {
       return { isValid: false, error: "2FA code must be exactly 6 digits" }
+    }
+    return { isValid: true }
+  }
+
+  // Identifier validation
+  static validateId(id: string): ValidationResult {
+    if (!id) return { isValid: false, error: "ID is required" }
+    if (!ID_REGEX.test(id)) {
+      return { isValid: false, error: "Invalid ID format" }
     }
     return { isValid: true }
   }

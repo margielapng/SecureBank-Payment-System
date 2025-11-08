@@ -8,14 +8,19 @@ import TwoFactorForm from "@/components/two-factor-form"
 import { Shield, Lock, Globe, CheckCircle } from "lucide-react"
 
 export default function HomePage() {
-  const { isAuthenticated, needsTwoFactor, isLoading } = useAuth()
+  const { isAuthenticated, needsTwoFactor, needsTwoFactorSetup, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (isLoading) return
+    if (isAuthenticated && needsTwoFactorSetup) {
+      router.push("/settings/security")
+      return
+    }
+    if (isAuthenticated && !needsTwoFactor) {
       router.push("/dashboard")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, needsTwoFactor, needsTwoFactorSetup, isLoading, router])
 
   if (isLoading) {
     return (

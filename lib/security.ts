@@ -1,4 +1,4 @@
-// Security utilities for rate limiting, CSRF, session management, and audit logging
+
 
 export interface SecurityEvent {
   type: "login" | "logout" | "failed_login" | "transaction" | "admin_action" | "suspicious_activity"
@@ -54,7 +54,7 @@ export class SecurityManager {
     return storedToken === token
   }
 
-  // Session Management
+  
   static createSession(userId: string, email: string): Session {
     const now = Date.now()
     const session: Session = {
@@ -90,7 +90,7 @@ export class SecurityManager {
     try {
       const session: Session = JSON.parse(sessionStr)
 
-      // Check if session is expired
+      
       if (Date.now() > session.expiresAt) {
         this.destroySession()
         return null
@@ -106,7 +106,7 @@ export class SecurityManager {
     const session = this.getSession()
     if (!session) return false
 
-    // Update last activity
+    
     session.lastActivity = Date.now()
     if (typeof window !== "undefined") {
       localStorage.setItem("session", JSON.stringify(session))
@@ -150,7 +150,7 @@ export class SecurityManager {
     if (dataStr) {
       entry = JSON.parse(dataStr)
 
-      // Reset if window expired
+      
       if (now > entry.resetAt) {
         entry = { count: 1, resetAt: now + windowMs }
       } else {
@@ -193,7 +193,7 @@ export class SecurityManager {
     if (dataStr) {
       attempts = JSON.parse(dataStr)
 
-      // Check if account is locked
+      // Check if account is locked, acc gets locked due to too many tries
       if (attempts.lockedUntil && now < attempts.lockedUntil) {
         const remainingMs = attempts.lockedUntil - now
         const remainingMin = Math.ceil(remainingMs / 60000)
@@ -207,7 +207,7 @@ export class SecurityManager {
         return false
       }
 
-      // Clear lockout if expired
+      
       if (attempts.lockedUntil && now >= attempts.lockedUntil) {
         attempts = { count: 0 }
       }
@@ -216,7 +216,7 @@ export class SecurityManager {
     }
 
     if (success) {
-      // Clear attempts on successful login
+      // Clear attempts on successful loginsa
       localStorage.removeItem(key)
       return true
     } else {
@@ -247,11 +247,11 @@ export class SecurityManager {
     }
   }
 
-  // Security Event Logging
+ 
   static logSecurityEvent(event: SecurityEvent): void {
     if (typeof window === "undefined") return
 
-    // Store last 100 events
+    // Store last 100 events for audit logginf for admins
     const key = "security_logs"
     const logsStr = localStorage.getItem(key)
     let logs: SecurityEvent[] = logsStr ? JSON.parse(logsStr) : []

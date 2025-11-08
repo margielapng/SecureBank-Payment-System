@@ -108,7 +108,6 @@ export default function LoginForm() {
             <div className="space-y-1 text-xs text-muted-foreground">
               <p className="font-mono">Customer: john@bank.com / SecurePass123!</p>
               <p className="font-mono">Admin: admin@bank.com / AdminPass123!</p>
-              <p className="font-mono text-center mt-2">2FA Code: 123456</p>
             </div>
           </div>
         </form>

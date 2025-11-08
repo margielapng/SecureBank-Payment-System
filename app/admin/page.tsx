@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { AdminStats } from "@/components/admin-stats"
 import { UserManagement } from "@/components/user-management"
 import { SystemActivity } from "@/components/system-activity"
+import { AdminCreateForm } from "@/components/admin-create-form"
 
 export default function AdminPage() {
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -44,6 +45,10 @@ export default function AdminPage() {
         </div>
 
         <AdminStats />
+
+        <div className="mt-8">
+          <AdminCreateForm />
+        </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <UserManagement />

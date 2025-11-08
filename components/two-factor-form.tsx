@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -11,6 +12,7 @@ import { AlertCircle, Loader2, Shield } from "lucide-react"
 
 export default function TwoFactorForm() {
   const { verify2FA } = useAuth()
+  const router = useRouter()
   const [code, setCode] = useState(["", "", "", "", "", ""])
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -21,19 +23,19 @@ export default function TwoFactorForm() {
   }, [])
 
   const handleChange = (index: number, value: string) => {
-    // Only allow digits
+    
     if (value && !/^\d$/.test(value)) return
 
     const newCode = [...code]
     newCode[index] = value
     setCode(newCode)
 
-    // Auto-focus next input
+  
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus()
     }
 
-    // Auto-submit when all filled
+   
     if (index === 5 && value) {
       const fullCode = newCode.join("")
       handleSubmit(fullCode)
@@ -80,6 +82,8 @@ export default function TwoFactorForm() {
       setError(result.error || "Verification failed")
       setCode(["", "", "", "", "", ""])
       inputRefs.current[0]?.focus()
+    } else {
+      router.push("/dashboard")
     }
   }
 
@@ -93,7 +97,7 @@ export default function TwoFactorForm() {
         </div>
         <CardTitle className="text-2xl font-bold text-center">Two-Factor Authentication</CardTitle>
         <CardDescription className="text-center">
-          Enter the 6-digit verification code sent to your device
+          Enter the 6-digit code from your authenticator app
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -135,11 +139,7 @@ export default function TwoFactorForm() {
             )}
           </Button>
 
-          <div className="pt-4 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground">
-              Demo code: <span className="font-mono font-semibold">123456</span>
-            </p>
-          </div>
+          
         </div>
       </CardContent>
     </Card>

@@ -1,53 +1,43 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, XCircle, ArrowUpRight } from "lucide-react"
 
-const DEMO_TRANSACTIONS = [
-  {
-    id: "TXN-2025-001",
-    recipient: "Acme Corp Ltd",
-    amount: "$12,500.00",
-    currency: "USD",
-    status: "completed",
-    date: "2025-01-08",
-  },
-  {
-    id: "TXN-2025-002",
-    recipient: "Global Trade Inc",
-    amount: "€8,350.00",
-    currency: "EUR",
-    status: "pending",
-    date: "2025-01-08",
-  },
-  {
-    id: "TXN-2025-003",
-    recipient: "Tech Solutions",
-    amount: "£5,200.00",
-    currency: "GBP",
-    status: "completed",
-    date: "2025-01-07",
-  },
-  {
-    id: "TXN-2025-004",
-    recipient: "Manufacturing Co",
-    amount: "$3,750.00",
-    currency: "USD",
-    status: "failed",
-    date: "2025-01-07",
-  },
-  {
-    id: "TXN-2025-005",
-    recipient: "Service Provider",
-    amount: "CHF 2,100.00",
-    currency: "CHF",
-    status: "pending",
-    date: "2025-01-06",
-  },
-]
+type Tx = {
+  id: string
+  recipient: string
+  amount: number
+  currency: string
+  status: string
+  date: string
+}
 
 export function RecentTransactions() {
+  const [items, setItems] = useState<Tx[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+    async function load() {
+      try {
+        const res = await fetch("/api/payment", { method: "GET" })
+        const data = await res.json()
+        if (res.ok && data?.items && Array.isArray(data.items)) {
+          if (isMounted) setItems(data.items as Tx[])
+        }
+      } catch {}
+      finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
@@ -85,7 +75,13 @@ export function RecentTransactions() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {DEMO_TRANSACTIONS.map((transaction) => (
+          {loading && items.length === 0 && (
+            <div className="text-sm text-slate-500">Loading...</div>
+          )}
+          {!loading && items.length === 0 && (
+            <div className="text-sm text-slate-500">No transactions yet.</div>
+          )}
+          {items.map((transaction) => (
             <div
               key={transaction.id}
               className="flex items-start justify-between rounded-lg border border-slate-200 p-4 transition-colors hover:bg-slate-50"
@@ -95,11 +91,11 @@ export function RecentTransactions() {
                 <div>
                   <p className="font-medium text-slate-900">{transaction.recipient}</p>
                   <p className="text-sm text-slate-500">{transaction.id}</p>
-                  <p className="mt-1 text-xs text-slate-400">{transaction.date}</p>
+                  <p className="mt-1 text-xs text-slate-400">{new Date(transaction.date).toLocaleString()}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-slate-900">{transaction.amount}</p>
+                <p className="font-semibold text-slate-900">{transaction.currency} {Number(transaction.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <div className="mt-1">{getStatusBadge(transaction.status)}</div>
               </div>
             </div>
