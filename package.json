@@ -2,11 +2,14 @@
   "name": "international-payments-portal",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
+   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"Tests coming soon\" && exit 0"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
